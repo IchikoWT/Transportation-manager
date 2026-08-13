@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>みちしるべ ― 送迎ルート管理</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F7F4EC;
+  --surface:#FFFFFF;
+  --surface-2:#FBF9F3;
+  --ink:#24312D;
+  --ink-soft:#5C6B65;
+  --ink-faint:#93A199;
+  --line:#E3DDC9;
+  --primary:#1F5C54;
+  --primary-dark:#153F3A;
+  --primary-soft:#E1EEE9;
+  --accent:#D98E2B;
+  --accent-soft:#FBEEDA;
+  --danger:#B23A3A;
+  --danger-soft:#F7E4E1;
+  --success:#4A8C5B;
+  --route-1:#1F5C54;
+  --route-2:#D98E2B;
+  --route-3:#3A5A8C;
+  --route-4:#8C4A6B;
+  --route-5:#6B8C4A;
+  --route-6:#B25539;
+  --radius:14px;
+  --shadow: 0 2px 10px rgba(36,49,45,0.06), 0 1px 2px rgba(36,49,45,0.08);
+  font-family:'Noto Sans JP',sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);}
+body{
+  background-image: radial-gradient(circle, rgba(36,49,45,0.05) 1px, transparent 1px);
+  background-size: 18px 18px;
+  min-height:100vh;
+}
+h1,h2,h3,h4{font-family:'Zen Maru Gothic',sans-serif; margin:0; letter-spacing:.01em;}
+.mono{font-family:'JetBrains Mono',monospace;}
+button{font-family:inherit; cursor:pointer;}
+#app{display:flex; min-height:100vh;}
+
+/* Sidebar */
+.sidebar{
+  width:236px; flex-shrink:0; background:var(--primary-dark); color:#EFE9D8;
+  display:flex; flex-direction:column; padding:26px 18px; gap:6px;
+}
+.brand{display:flex; align-items:center; gap:10px; margin-bottom:28px; padding:0 6px;}
+.brand-mark{
+  width:38px;height:38px;border-radius:10px; background:var(--accent);
+  display:flex;align-items:center;justify-content:center; font-size:20px; flex-shrink:0;
+  box-shadow: inset 0 -3px 0 rgba(0,0,0,0.15);
+}
+.brand-text h1{font-size:19px; color:#fff; line-height:1.1;}
+.brand-text span{font-size:10.5px; color:#B9C9C2; letter-spacing:.06em;}
+.nav-btn{
+  display:flex; align-items:center; gap:10px; text-align:left; background:transparent; border:none;
+  color:#CBD8D1; padding:11px 12px; border-radius:10px; font-size:14.5px; font-weight:500;
+  transition: background .15s, color .15s;
+}
+.nav-btn .ic{width:18px; text-align:center; opacity:.85;}
+.nav-btn:hover{background:rgba(255,255,255,0.06); color:#fff;}
+.nav-btn.active{background:var(--accent); color:#2B1C05; font-weight:700;}
+.sidebar-foot{margin-top:auto; padding:10px 6px; font-size:11px; color:#8CA097; line-height:1.6;}
+
+/* Main */
+.main{flex:1; padding:32px 40px 60px; max-width:1180px;}
+.page-head{display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:22px; gap:16px; flex-wrap:wrap;}
+.page-head h2{font-size:24px;}
+.page-head p{margin:4px 0 0; color:var(--ink-soft); font-size:13.5px;}
+.btn{
+  border:none; border-radius:10px; padding:10px 18px; font-size:13.5px; font-weight:700;
+  display:inline-flex; align-items:center; gap:7px; transition:transform .1s, box-shadow .15s;
+}
+.btn:active{transform:scale(0.97);}
+.btn-primary{background:var(--primary); color:#fff; box-shadow:var(--shadow);}
+.btn-primary:hover{background:var(--primary-dark);}
+.btn-accent{background:var(--accent); color:#2B1C05; box-shadow:var(--shadow);}
+.btn-accent:hover{filter:brightness(0.95);}
+.btn-ghost{background:var(--surface); color:var(--ink); border:1px solid var(--line);}
+.btn-ghost:hover{background:var(--surface-2);}
+.btn-danger-outline{background:#fff;color:var(--danger);border:1px solid #E3B9B3;}
+.btn-danger-outline:hover{background:var(--danger-soft);}
+.btn-sm{padding:6px 11px; font-size:12.5px; border-radius:8px;}
+
+.card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);}
+.card-pad{padding:20px 22px;}
+
+table{width:100%; border-collapse:collapse; font-size:13.5px;}
+th{text-align:left; font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint); padding:10px 14px; border-bottom:1px solid var(--line); font-weight:700;}
+td{padding:12px 14px; border-bottom:1px solid var(--line); vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface-2);}
+
+.badge{display:inline-flex; align-items:center; padding:3px 9px; border-radius:100px; font-size:11.5px; font-weight:700; gap:4px;}
+.badge-day{background:var(--primary-soft); color:var(--primary-dark);}
+.badge-off{background:#EEECE1; color:var(--ink-faint);}
+.badge-wc{background:var(--accent-soft); color:#8A5A11;}
+.badge-warn{background:var(--danger-soft); color:var(--danger);}
+.row-actions{display:flex; gap:6px;}
+
+.empty{padding:40px 20px; text-align:center; color:var(--ink-soft);}
+.empty .ic{font-size:30px; margin-bottom:8px;}
+
+/* Modal */
+.modal-overlay{position:fixed; inset:0; background:rgba(36,49,45,0.45); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px;}
+.modal{background:var(--surface); border-radius:16px; width:100%; max-width:640px; max-height:88vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.25);}
+.modal-head{display:flex; justify-content:space-between; align-items:center; padding:18px 22px; border-bottom:1px solid var(--line);}
+.modal-body{padding:20px 22px;}
+.modal-foot{padding:16px 22px; border-top:1px solid var(--line); display:flex; justify-content:flex-end; gap:8px;}
+.close-x{background:none;border:none;font-size:18px;color:var(--ink-faint);}
+.field{margin-bottom:16px;}
+.field label{display:block; font-size:12.5px; font-weight:700; color:var(--ink-soft); margin-bottom:6px;}
+.field input[type=text], .field input[type=number]{
+  width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-size:14px; background:var(--surface-2);
+}
+.field input:focus{outline:2px solid var(--primary); outline-offset:1px;}
+.check-grid{display:flex; gap:6px; flex-wrap:wrap;}
+.check-pill{border:1px solid var(--line); border-radius:100px; padding:7px 14px; font-size:13px; font-weight:600; background:var(--surface-2); color:var(--ink-soft);}
+.check-pill.on{background:var(--primary); border-color:var(--primary); color:#fff;}
+.toggle-wc{border:1px solid var(--line); border-radius:100px; padding:7px 14px; font-size:13px; font-weight:600; background:var(--surface-2); color:var(--ink-soft);}
+.toggle-wc.on{background:var(--accent); border-color:var(--accent); color:#2B1C05;}
+.map-hint{font-size:12px; color:var(--ink-faint); margin-top:6px;}
+
+/* Day tabs */
+/* Weekly calendar */
+.week-calendar{
+  display:grid; grid-template-columns:repeat(6, minmax(150px,1fr)); gap:10px;
+  margin-bottom:22px; overflow-x:auto; padding-bottom:2px;
+}
+.cal-day{
+  background:var(--surface); border:1.5px solid var(--line); border-radius:12px; padding:12px 10px 14px;
+  cursor:pointer; transition:border-color .15s, box-shadow .15s, transform .1s;
+  min-height:150px; display:flex; flex-direction:column;
+}
+.cal-day:hover{border-color:var(--primary); box-shadow:var(--shadow);}
+.cal-day.active{border-color:var(--primary); background:var(--primary-soft); box-shadow:var(--shadow);}
+.cal-day-head{display:flex; align-items:center; gap:6px; padding-bottom:8px; margin-bottom:8px; border-bottom:1px dashed var(--line);}
+.cal-day-label{font-family:'Zen Maru Gothic',sans-serif; font-size:17px; font-weight:900; color:var(--primary-dark);}
+.cal-day-count{margin-left:auto; font-size:11.5px; font-weight:700; color:var(--ink-soft); font-family:'JetBrains Mono',monospace;}
+.cal-warn-dot{width:8px; height:8px; border-radius:50%; background:var(--danger); flex-shrink:0;}
+.cal-day-body{display:flex; flex-direction:column; gap:8px; flex:1;}
+.cal-empty{font-size:12px; color:var(--ink-faint); padding:10px 2px;}
+.cal-empty-warn{color:var(--danger);}
+.cal-vehicle{background:var(--surface-2); border-radius:8px; padding:7px 9px;}
+.cal-vehicle-head{display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; margin-bottom:4px;}
+.cal-vname{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.cal-cap{margin-left:auto; font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--ink-soft); flex-shrink:0;}
+.cal-names{font-size:11px; color:var(--ink-soft); line-height:1.65;}
+.cal-stop{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.cal-unassigned{font-size:11px; font-weight:700; color:var(--danger); background:var(--danger-soft); border-radius:7px; padding:5px 8px;}
+
+.day-detail-divider{display:flex; align-items:center; gap:10px; margin:6px 0 16px;}
+.day-detail-divider span{font-size:12.5px; font-weight:700; color:var(--ink-soft); white-space:nowrap;}
+.day-detail-divider::after{content:''; flex:1; height:1px; background:var(--line);}
+
+.day-tabs{display:flex; gap:6px; margin-bottom:20px; flex-wrap:wrap;}
+.day-tab{padding:9px 16px; border-radius:10px; border:1px solid var(--line); background:var(--surface); font-weight:700; font-size:13.5px; color:var(--ink-soft);}
+.day-tab.active{background:var(--primary); border-color:var(--primary); color:#fff;}
+.day-tab .cnt{font-size:11px; opacity:.75; margin-left:4px;}
+
+.plan-grid{display:grid; grid-template-columns:280px 1fr; gap:20px; align-items:start;}
+@media (max-width:880px){.plan-grid{grid-template-columns:1fr;}}
+@media (max-width:760px){.week-calendar{grid-template-columns:repeat(6, 150px);}}
+
+.attend-item{display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:9px;}
+.attend-item:hover{background:var(--surface-2);}
+.attend-item input{width:17px; height:17px; accent-color:var(--primary);}
+.attend-name{flex:1; font-size:13.5px;}
+.attend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+.summary-strip{display:flex; gap:12px; margin-bottom:18px; flex-wrap:wrap;}
+.stat{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 18px; min-width:120px;}
+.stat .num{font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; color:var(--primary-dark);}
+.stat .lbl{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+
+.vehicle-card{border:1px solid var(--line); border-radius:12px; margin-bottom:14px; overflow:hidden;}
+.vehicle-head{display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface-2); border-bottom:1px solid var(--line);}
+.line-dot{width:12px;height:12px;border-radius:50%; flex-shrink:0;}
+.vehicle-head b{font-size:14px;}
+.vehicle-head .meta{margin-left:auto; font-size:12px; color:var(--ink-soft);}
+.stop-list{padding:8px 16px 14px;}
+.stop-row{display:flex; align-items:center; gap:10px; padding:6px 0; font-size:13px;}
+.stop-num{width:22px;height:22px;border-radius:50%; color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0;}
+.stop-row .snm{flex:1;}
+.stop-row .sdist{color:var(--ink-faint); font-family:'JetBrains Mono',monospace; font-size:12px;}
+
+.notice{display:flex; gap:10px; align-items:flex-start; padding:12px 14px; border-radius:10px; font-size:13px; margin-bottom:16px;}
+.notice-warn{background:var(--danger-soft); color:#7A2C2C;}
+.notice-info{background:var(--primary-soft); color:var(--primary-dark);}
+
+.toast{position:fixed; bottom:26px; left:50%; transform:translateX(-50%); background:var(--primary-dark); color:#fff; padding:12px 22px; border-radius:100px; font-size:13.5px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,0.25); z-index:100; opacity:0; pointer-events:none; transition:opacity .25s, transform .25s;}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(-4px);}
+
+svg.mapsvg{width:100%; height:auto; background:var(--surface-2); border-radius:12px; border:1px solid var(--line);}
+
+.weeklabel-row{display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap;}
+.weeklabel-row input{padding:8px 12px; border:1px solid var(--line); border-radius:8px; font-size:13.5px; background:var(--surface); min-width:230px;}
+.weeklabel-row label{font-size:12.5px; font-weight:700; color:var(--ink-soft);}
+
+/* ===== Print / PDF output ===== */
+#print-area{ display:none; }
+.print-page{ padding:14mm 12mm; }
+.print-page + .print-page{ page-break-before: always; }
+.print-head{ display:flex; justify-content:space-between; align-items:baseline; border-bottom:3px solid var(--primary); padding-bottom:10px; margin-bottom:4px;}
+.print-head h1{ font-size:20px; color:var(--primary-dark); }
+.print-head .pmeta{ font-size:11px; color:var(--ink-soft); text-align:right; line-height:1.6;}
+.print-daytitle{ display:flex; align-items:baseline; gap:10px; margin:16px 0 8px; }
+.print-daytitle .dnum{ font-size:22px; font-weight:900; font-family:'Zen Maru Gothic',sans-serif; color:var(--primary);}
+.print-daytitle .dsub{ font-size:11.5px; color:var(--ink-soft); }
+.print-summary{ display:flex; gap:18px; font-size:12px; color:var(--ink-soft); margin-bottom:10px; }
+.print-table{ width:100%; border-collapse:collapse; margin-bottom:12px; font-size:12px; }
+.print-table th{ text-align:left; background:var(--surface-2); border:1px solid var(--line); padding:5px 8px; font-size:10.5px; color:var(--ink-soft); }
+.print-table td{ border:1px solid var(--line); padding:5px 8px; }
+.print-vehicle-title{ display:flex; align-items:center; gap:7px; font-weight:700; font-size:12.5px; margin:10px 0 4px; }
+.print-dot{width:9px;height:9px;border-radius:50%; display:inline-block; flex-shrink:0;}
+.print-empty{ font-size:11.5px; color:var(--ink-faint); padding:6px 0 12px; }
+.print-warn{ font-size:11.5px; color:var(--danger); background:var(--danger-soft); padding:6px 10px; border-radius:6px; margin-bottom:8px; }
+.print-foot{ margin-top:10px; font-size:10px; color:var(--ink-faint); }
+
+@media print{
+  @page{ size:A4; margin:0; }
+  body{ background:#fff; }
+  body > *:not(#print-area){ display:none !important; }
+  #print-area{ display:block; }
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast" class="toast"></div>
+<div id="print-area"></div>
+
+<script>
+/* ============ CONSTANTS ============ */
+const WEEKDAYS = [
+  {key:'mon', label:'月'}, {key:'tue', label:'火'}, {key:'wed', label:'水'},
+  {key:'thu', label:'木'}, {key:'fri', label:'金'}, {key:'sat', label:'土'}
+];
+const ROUTE_COLORS = ['var(--route-1)','var(--route-2)','var(--route-3)','var(--route-4)','var(--route-5)','var(--route-6)'];
+const DEPOT = {x:0, y:0};
+const STORAGE_KEY = 'michishirube-data-v1';
+
+/* ============ STATE ============ */
+let state = null;
+let ui = { tab:'plan', day:'mon', userModal:null, staffModal:null, draft:null };
+
+function uid(p){ return p + '_' + Math.random().toString(36).slice(2,9); }
+function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
+
+function defaultState(){
+  const users = [
+    {id:uid('u'), name:'佐藤 花子', wheelchair:true, x:-4.2, y:2.6, days:['mon','tue','wed','thu','fri']},
+    {id:uid('u'), name:'鈴木 一郎', wheelchair:false, x:3.1, y:4.8, days:['mon','wed','fri']},
+    {id:uid('u'), name:'高橋 みどり', wheelchair:false, x:-6.5, y:-3.2, days:['mon','tue','wed','thu','fri']},
+    {id:uid('u'), name:'田中 修', wheelchair:true, x:5.4, y:-2.0, days:['tue','thu','sat']},
+    {id:uid('u'), name:'伊藤 さくら', wheelchair:false, x:1.8, y:-5.6, days:['mon','tue','wed','thu','fri']},
+    {id:uid('u'), name:'渡辺 健太', wheelchair:false, x:-2.0, y:6.3, days:['mon','wed','fri','sat']},
+    {id:uid('u'), name:'小林 幸子', wheelchair:true, x:7.0, y:1.5, days:['mon','tue','thu']},
+    {id:uid('u'), name:'加藤 大輔', wheelchair:false, x:-8.0, y:0.4, days:['wed','thu','fri']},
+  ];
+  const staff = [
+    {id:uid('s'), name:'山本 太郎', capacity:4, days:['mon','tue','wed','thu','fri']},
+    {id:uid('s'), name:'中村 由美', capacity:3, days:['mon','wed','fri','sat']},
+  ];
+  const attendance = {};
+  WEEKDAYS.forEach(d=>{
+    attendance[d.key] = {};
+    users.forEach(u=>{ attendance[d.key][u.id] = u.days.includes(d.key); });
+  });
+  return {users, staff, attendance, weekLabel:'', depot:{name:'事業所', address:''}};
+}
+
+async function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){ state = JSON.parse(raw); }
+    else { state = defaultState(); persist(); }
+  }catch(e){
+    state = defaultState();
+    persist();
+  }
+  ensureAttendanceShape();
+  render();
+}
+function persist(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch(e){ console.error('保存に失敗しました', e); }
+}
+function ensureAttendanceShape(){
+  if(typeof state.weekLabel !== 'string') state.weekLabel = '';
+  if(!state.depot) state.depot = {name:'事業所', address:''};
+  if(typeof state.depot.address !== 'string') state.depot.address = '';
+  if(!state.depot.name) state.depot.name = '事業所';
+  WEEKDAYS.forEach(d=>{
+    if(!state.attendance[d.key]) state.attendance[d.key] = {};
+    state.users.forEach(u=>{
+      if(!(u.id in state.attendance[d.key])) state.attendance[d.key][u.id] = u.days.includes(d.key);
+    });
+  });
+}
+function commit(){ persist(); render(); }
+
+/* ============ ROUTE ENGINE ============ */
+function sweepAssign(depot, presentUsers, availStaff){
+  const withAngle = presentUsers.map(u=>({...u, angle: Math.atan2(u.y-depot.y, u.x-depot.x)}));
+  withAngle.sort((a,b)=>a.angle-b.angle);
+  const staffSorted = [...availStaff];
+  let idx=0; const groups=[];
+  for(const s of staffSorted){
+    if(idx>=withAngle.length) break;
+    const grp = withAngle.slice(idx, idx+s.capacity);
+    idx += s.capacity;
+    groups.push({staff:s, members:grp});
+  }
+  const unassigned = withAngle.slice(idx);
+  return {groups, unassigned};
+}
+function routeLength(depot, order){
+  let total=0, prev=depot;
+  for(const p of order){ total+=dist(prev,p); prev=p; }
+  return total;
+}
+function nearestNeighbor(depot, members){
+  let remaining=[...members], route=[], current=depot;
+  while(remaining.length){
+    let bi=0,bd=Infinity;
+    remaining.forEach((u,i)=>{const d=dist(current,u); if(d<bd){bd=d;bi=i;}});
+    const next = remaining.splice(bi,1)[0];
+    route.push(next); current=next;
+  }
+  return route;
+}
+function twoOpt(depot, initial){
+  let best=[...initial], bestLen=routeLength(depot,best), improved=true;
+  let guard=0;
+  while(improved && guard<200){
+    improved=false; guard++;
+    for(let i=0;i<best.length-1;i++){
+      for(let j=i+1;j<best.length;j++){
+        const cand=[...best.slice(0,i), ...best.slice(i,j+1).reverse(), ...best.slice(j+1)];
+        const cl = routeLength(depot,cand);
+        if(cl < bestLen - 1e-6){ best=cand; bestLen=cl; improved=true; }
+      }
+    }
+  }
+  return {order:best, length:bestLen};
+}
+function computeDayPlan(day){
+  const presentIds = state.users.filter(u=>state.attendance[day][u.id]);
+  const availStaff = state.staff.filter(s=>s.days.includes(day));
+  if(presentIds.length===0){ return {groups:[], unassigned:[], noStaff:availStaff.length===0}; }
+  const {groups, unassigned} = sweepAssign(DEPOT, presentIds, availStaff);
+  const built = groups.map((g,i)=>{
+    const nn = nearestNeighbor(DEPOT, g.members);
+    const opt = twoOpt(DEPOT, nn);
+    return {staff:g.staff, order:opt.order, length:opt.length, colorIdx:i%ROUTE_COLORS.length};
+  });
+  return {groups:built, unassigned, noStaff:availStaff.length===0};
+}
+
+/* ============ HELPERS ============ */
+function dayLabel(k){ return WEEKDAYS.find(d=>d.key===k).label; }
+function userById(id){ return state.users.find(u=>u.id===id); }
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(window._toastT);
+  window._toastT=setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ============ MAP SVG (shared component) ============ */
+function mapToPx(x,y){
+  // range -14..14 km -> 20..380 px
+  const scale = 360/28;
+  return { px: 200 + x*scale, py: 200 - y*scale };
+}
+function renderMiniMap(users, highlightId, routeOverlay){
+  // routeOverlay: array of {order, colorVar} to draw polylines, optional
+  let svg = `<svg class="mapsvg" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">`;
+  // grid rings
+  for(let r=5; r<=15; r+=5){
+    const scale=360/28;
+    svg += `<circle cx="200" cy="200" r="${r*scale}" fill="none" stroke="var(--line)" stroke-width="1"/>`;
+  }
+  svg += `<line x1="20" y1="200" x2="380" y2="200" stroke="var(--line)" stroke-width="1"/>`;
+  svg += `<line x1="200" y1="20" x2="200" y2="380" stroke="var(--line)" stroke-width="1"/>`;
+
+  if(routeOverlay){
+    routeOverlay.forEach(r=>{
+      let pts = [mapToPx(0,0), ...r.order.map(u=>mapToPx(u.x,u.y))];
+      const d = pts.map((p,i)=> (i===0?'M':'L')+p.px.toFixed(1)+','+p.py.toFixed(1)).join(' ');
+      svg += `<path d="${d}" fill="none" stroke="${r.color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>`;
+      r.order.forEach((u,i)=>{
+        const p = mapToPx(u.x,u.y);
+        svg += `<circle cx="${p.px}" cy="${p.py}" r="9" fill="${r.color}" stroke="#fff" stroke-width="2"/>`;
+        svg += `<text x="${p.px}" y="${p.py+3.5}" font-size="9" font-weight="700" fill="#fff" text-anchor="middle" font-family="JetBrains Mono, monospace">${i+1}</text>`;
+      });
+    });
+  } else {
+    users.forEach(u=>{
+      const p = mapToPx(u.x,u.y);
+      const isHi = u.id===highlightId;
+      svg += `<circle cx="${p.px}" cy="${p.py}" r="${isHi?9:6}" fill="${isHi?'var(--accent)':'var(--ink-faint)'}" stroke="#fff" stroke-width="2" opacity="${isHi?1:0.55}"/>`;
+    });
+  }
+  // depot
+  const dp = mapToPx(0,0);
+  svg += `<rect x="${dp.px-10}" y="${dp.py-10}" width="20" height="20" rx="5" fill="var(--primary)" stroke="#fff" stroke-width="2"/>`;
+  svg += `<text x="${dp.px}" y="${dp.py+3.5}" font-size="10" fill="#fff" text-anchor="middle" font-weight="700">${(state.depot.name||'所').slice(0,1)}</text>`;
+  svg += `<title>${state.depot.name}${state.depot.address? ' － '+state.depot.address:''}</title>`;
+  svg += `</svg>`;
+  return svg;
+}
+
+/* ============ RENDER: SHELL ============ */
+function render(){
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">🧭</div>
+        <div class="brand-text"><h1>みちしるべ</h1><span>送迎ルート管理システム</span></div>
+      </div>
+      <button class="nav-btn ${ui.tab==='plan'?'active':''}" onclick="setTab('plan')"><span class="ic">🗺️</span>週間計画とルート</button>
+      <button class="nav-btn ${ui.tab==='users'?'active':''}" onclick="setTab('users')"><span class="ic">🧑‍🤝‍🧑</span>利用者管理</button>
+      <button class="nav-btn ${ui.tab==='staff'?'active':''}" onclick="setTab('staff')"><span class="ic">🚐</span>従業員・車両管理</button>
+      <button class="nav-btn ${ui.tab==='depot'?'active':''}" onclick="setTab('depot')"><span class="ic">🏢</span>事業所情報</button>
+      <div class="sidebar-foot">位置情報は${state.depot.name}を中心とした簡易座標(直線距離)です。実際の道路距離とは異なります。</div>
+    </div>
+    <div class="main">${ ui.tab==='plan'?renderPlanTab(): ui.tab==='users'?renderUsersTab(): ui.tab==='staff'?renderStaffTab(): renderDepotTab() }</div>
+  `;
+  if(ui.userModal!==null) renderUserModal();
+  if(ui.staffModal!==null) renderStaffModal();
+}
+function setTab(t){ ui.tab=t; render(); }
+function setDay(d){ ui.day=d; render(); }
+
+/* ============ DEPOT TAB ============ */
+function renderDepotTab(){
+  const d = state.depot;
+  return `
+    <div class="page-head">
+      <div><h2>事業所情報</h2><p>送迎ルートの起点となる事業所の名称・住所を登録します。</p></div>
+    </div>
+    <div class="plan-grid">
+      <div>
+        <div class="card card-pad">
+          <div class="field"><label>事業所名</label><input type="text" id="depot-name" value="${d.name}" placeholder="例）〇〇障害福祉サービス事業所"></div>
+          <div class="field" style="margin-bottom:6px;"><label>住所</label><input type="text" id="depot-address" value="${d.address}" placeholder="例）群馬県前橋市〇〇町1-2-3"></div>
+          <div class="map-hint" style="margin-bottom:16px;">登録した住所は週間予定表(PDF)のヘッダーや地図の起点ラベルに表示されます。地図上の起点位置は常に中心(0,0)固定で、住所の文字列からの自動配置(ジオコーディング)は行いません。利用者の位置は「利用者管理」の地図で、この起点からの相対位置として設定してください。</div>
+          <button class="btn btn-primary" onclick="saveDepotInfo()">保存する</button>
+        </div>
+      </div>
+      <div>
+        <div class="card card-pad">
+          <h4 style="font-size:14px; margin-bottom:10px;">起点の位置(参考図)</h4>
+          ${renderMiniMap(state.users, null, null)}
+        </div>
+      </div>
+    </div>
+  `;
+}
+function saveDepotInfo(){
+  const name = document.getElementById('depot-name').value.trim();
+  const address = document.getElementById('depot-address').value.trim();
+  state.depot.name = name || '事業所';
+  state.depot.address = address;
+  showToast('事業所情報を保存しました');
+  commit();
+}
+
+/* ============ USERS TAB ============ */
+function renderUsersTab(){
+  const rows = state.users.map(u=>`
+    <tr>
+      <td><b>${u.name}</b></td>
+      <td>${u.wheelchair?`<span class="badge badge-wc">車椅子</span>`:'—'}</td>
+      <td>${WEEKDAYS.map(d=>`<span class="badge ${u.days.includes(d.key)?'badge-day':'badge-off'}" style="margin-right:3px;">${d.label}</span>`).join('')}</td>
+      <td class="mono">${dist(DEPOT,u).toFixed(1)} km</td>
+      <td>
+        <div class="row-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openUserModal('${u.id}')">編集</button>
+          <button class="btn btn-danger-outline btn-sm" onclick="deleteUser('${u.id}')">削除</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+  return `
+    <div class="page-head">
+      <div><h2>利用者管理</h2><p>送迎対象の利用者情報と、利用する曜日を登録します。</p></div>
+      <button class="btn btn-primary" onclick="openUserModal(null)">＋ 利用者を追加</button>
+    </div>
+    <div class="card">
+      ${state.users.length? `<table><thead><tr><th>氏名</th><th>配慮事項</th><th>利用曜日</th><th>${state.depot.name}からの距離</th><th></th></tr></thead><tbody>${rows}</tbody></table>`
+        : `<div class="empty"><div class="ic">🧑‍🤝‍🧑</div>利用者が登録されていません。「利用者を追加」から登録してください。</div>`}
+    </div>
+  `;
+}
+function openUserModal(id){
+  const u = id ? userById(id) : {id:null, name:'', wheelchair:false, x:0, y:0, days:[]};
+  ui.draft = JSON.parse(JSON.stringify(u));
+  ui.userModal = id||'new';
+  render();
+}
+function closeUserModal(){ ui.userModal=null; ui.draft=null; render(); }
+function renderUserModal(){
+  const d = ui.draft;
+  const html = `
+    <div class="modal-overlay" onclick="if(event.target===this) closeUserModal()">
+      <div class="modal">
+        <div class="modal-head"><h3>${d.id?'利用者を編集':'利用者を追加'}</h3><button class="close-x" onclick="closeUserModal()">✕</button></div>
+        <div class="modal-body">
+          <div class="field"><label>氏名</label><input type="text" id="f-name" value="${d.name}" placeholder="例）山田 太郎"></div>
+          <div class="field">
+            <label>配慮事項</label>
+            <button class="toggle-wc ${d.wheelchair?'on':''}" onclick="toggleDraftWc()">🦽 車椅子を利用</button>
+          </div>
+          <div class="field">
+            <label>利用曜日</label>
+            <div class="check-grid">
+              ${WEEKDAYS.map(w=>`<button class="check-pill ${d.days.includes(w.key)?'on':''}" onclick="toggleDraftDay('${w.key}')">${w.label}</button>`).join('')}
+            </div>
+          </div>
+          <div class="field">
+            <label>お迎え場所（地図をクリックして設定・${state.depot.name}からの相対位置）</label>
+            ${renderPickerMap(d)}
+            <div class="map-hint">現在位置：X ${d.x.toFixed(1)} km ／ Y ${d.y.toFixed(1)} km（${state.depot.name}からの直線距離 ${dist(DEPOT,d).toFixed(1)} km）</div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" onclick="closeUserModal()">キャンセル</button>
+          <button class="btn btn-primary" onclick="saveUser()">保存する</button>
+        </div>
+      </div>
+    </div>
+  `;
+  const wrap = document.createElement('div');
+  wrap.innerHTML = html;
+  document.getElementById('app').appendChild(wrap.firstElementChild);
+}
+function renderPickerMap(d){
+  let svg = `<svg class="mapsvg" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" onclick="pickMapPos(event)" style="cursor:crosshair;">`;
+  for(let r=5;r<=15;r+=5){ const scale=360/28; svg+=`<circle cx="200" cy="200" r="${r*scale}" fill="none" stroke="var(--line)" stroke-width="1"/>`; }
+  svg += `<line x1="20" y1="200" x2="380" y2="200" stroke="var(--line)" stroke-width="1"/>`;
+  svg += `<line x1="200" y1="20" x2="200" y2="380" stroke="var(--line)" stroke-width="1"/>`;
+  state.users.filter(u=>u.id!==d.id).forEach(u=>{
+    const p=mapToPx(u.x,u.y);
+    svg += `<circle cx="${p.px}" cy="${p.py}" r="5" fill="var(--ink-faint)" opacity="0.4"/>`;
+  });
+  const dp=mapToPx(0,0);
+  svg += `<rect x="${dp.px-9}" y="${dp.py-9}" width="18" height="18" rx="4" fill="var(--primary)" stroke="#fff" stroke-width="2"/><title>${state.depot.name}</title>`;
+  const p = mapToPx(d.x,d.y);
+  svg += `<circle cx="${p.px}" cy="${p.py}" r="10" fill="var(--accent)" stroke="#fff" stroke-width="2.5"/>`;
+  svg += `</svg>`;
+  return svg;
+}
+function pickMapPos(evt){
+  const svg = evt.currentTarget;
+  const rect = svg.getBoundingClientRect();
+  const scale=360/28;
+  const px = (evt.clientX-rect.left) * (400/rect.width);
+  const py = (evt.clientY-rect.top) * (400/rect.height);
+  ui.draft.x = +(((px-200)/scale)).toFixed(2);
+  ui.draft.y = +(((200-py)/scale)).toFixed(2);
+  refreshUserModal();
+}
+function toggleDraftWc(){ ui.draft.wheelchair = !ui.draft.wheelchair; refreshUserModal(); }
+function toggleDraftDay(k){
+  const i = ui.draft.days.indexOf(k);
+  if(i>-1) ui.draft.days.splice(i,1); else ui.draft.days.push(k);
+  refreshUserModal();
+}
+function refreshUserModal(){
+  const existing = document.querySelector('.modal-overlay');
+  if(existing) existing.remove();
+  renderUserModal();
+}
+function saveUser(){
+  const name = document.getElementById('f-name').value.trim();
+  if(!name){ showToast('氏名を入力してください'); return; }
+  ui.draft.name = name;
+  if(ui.draft.id){
+    const idx = state.users.findIndex(u=>u.id===ui.draft.id);
+    state.users[idx] = ui.draft;
+  } else {
+    ui.draft.id = uid('u');
+    state.users.push(ui.draft);
+  }
+  ensureAttendanceShape();
+  // sync attendance default for days newly checked (keep existing overrides otherwise untouched for existing users on save is acceptable simplification)
+  WEEKDAYS.forEach(w=>{
+    if(!(ui.draft.id in state.attendance[w.key])) state.attendance[w.key][ui.draft.id] = ui.draft.days.includes(w.key);
+  });
+  ui.userModal=null; ui.draft=null;
+  showToast('利用者情報を保存しました。ルートに反映されます。');
+  commit();
+}
+function deleteUser(id){
+  if(!confirm('この利用者を削除しますか？')) return;
+  state.users = state.users.filter(u=>u.id!==id);
+  WEEKDAYS.forEach(w=>{ delete state.attendance[w.key][id]; });
+  showToast('利用者を削除しました');
+  commit();
+}
+
+/* ============ STAFF TAB ============ */
+function renderStaffTab(){
+  const rows = state.staff.map(s=>`
+    <tr>
+      <td><b>${s.name}</b></td>
+      <td class="mono">定員 ${s.capacity} 名</td>
+      <td>${WEEKDAYS.map(d=>`<span class="badge ${s.days.includes(d.key)?'badge-day':'badge-off'}" style="margin-right:3px;">${d.label}</span>`).join('')}</td>
+      <td>
+        <div class="row-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openStaffModal('${s.id}')">編集</button>
+          <button class="btn btn-danger-outline btn-sm" onclick="deleteStaff('${s.id}')">削除</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+  return `
+    <div class="page-head">
+      <div><h2>従業員・車両管理</h2><p>送迎を担当する従業員と、車両の乗車定員・勤務曜日を登録します。</p></div>
+      <button class="btn btn-primary" onclick="openStaffModal(null)">＋ 従業員を追加</button>
+    </div>
+    <div class="card">
+      ${state.staff.length? `<table><thead><tr><th>氏名</th><th>乗車定員</th><th>勤務曜日</th><th></th></tr></thead><tbody>${rows}</tbody></table>`
+        : `<div class="empty"><div class="ic">🚐</div>従業員が登録されていません。</div>`}
+    </div>
+  `;
+}
+function openStaffModal(id){
+  const s = id ? state.staff.find(x=>x.id===id) : {id:null, name:'', capacity:4, days:[]};
+  ui.draft = JSON.parse(JSON.stringify(s));
+  ui.staffModal = id||'new';
+  render();
+}
+function closeStaffModal(){ ui.staffModal=null; ui.draft=null; render(); }
+function renderStaffModal(){
+  const d = ui.draft;
+  const html = `
+    <div class="modal-overlay" onclick="if(event.target===this) closeStaffModal()">
+      <div class="modal" style="max-width:520px;">
+        <div class="modal-head"><h3>${d.id?'従業員を編集':'従業員を追加'}</h3><button class="close-x" onclick="closeStaffModal()">✕</button></div>
+        <div class="modal-body">
+          <div class="field"><label>氏名</label><input type="text" id="s-name" value="${d.name}" placeholder="例）佐藤 次郎"></div>
+          <div class="field"><label>車両の乗車定員（人）</label><input type="number" id="s-cap" min="1" max="20" value="${d.capacity}"></div>
+          <div class="field">
+            <label>勤務曜日</label>
+            <div class="check-grid">
+              ${WEEKDAYS.map(w=>`<button class="check-pill ${d.days.includes(w.key)?'on':''}" onclick="toggleStaffDay('${w.key}')">${w.label}</button>`).join('')}
+            </div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" onclick="closeStaffModal()">キャンセル</button>
+          <button class="btn btn-primary" onclick="saveStaff()">保存する</button>
+        </div>
+      </div>
+    </div>
+  `;
+  const wrap = document.createElement('div');
+  wrap.innerHTML = html;
+  document.getElementById('app').appendChild(wrap.firstElementChild);
+}
+function toggleStaffDay(k){
+  const i = ui.draft.days.indexOf(k);
+  if(i>-1) ui.draft.days.splice(i,1); else ui.draft.days.push(k);
+  const existing = document.querySelector('.modal-overlay'); if(existing) existing.remove();
+  renderStaffModal();
+}
+function saveStaff(){
+  const name = document.getElementById('s-name').value.trim();
+  const cap = parseInt(document.getElementById('s-cap').value,10) || 1;
+  if(!name){ showToast('氏名を入力してください'); return; }
+  ui.draft.name = name; ui.draft.capacity = cap;
+  if(ui.draft.id){
+    const idx = state.staff.findIndex(s=>s.id===ui.draft.id);
+    state.staff[idx] = ui.draft;
+  } else {
+    ui.draft.id = uid('s');
+    state.staff.push(ui.draft);
+  }
+  ui.staffModal=null; ui.draft=null;
+  showToast('従業員情報を保存しました。ルートに反映されます。');
+  commit();
+}
+function deleteStaff(id){
+  if(!confirm('この従業員を削除しますか？')) return;
+  state.staff = state.staff.filter(s=>s.id!==id);
+  showToast('従業員を削除しました');
+  commit();
+}
+
+/* ============ PLAN TAB ============ */
+function resetWeek(){
+  if(!confirm('今週の出席状況を、各利用者の登録曜日どおりにリセットします。よろしいですか？')) return;
+  WEEKDAYS.forEach(w=>{
+    state.users.forEach(u=>{ state.attendance[w.key][u.id] = u.days.includes(w.key); });
+  });
+  showToast('週間計画を作成しました。全曜日のルートを再計算しました。');
+  commit();
+}
+function toggleAttendance(day, userId){
+  state.attendance[day][userId] = !state.attendance[day][userId];
+  commit();
+}
+function updateWeekLabel(v){
+  state.weekLabel = v;
+  persist();
+}
+
+/* ============ PDF / PRINT OUTPUT ============ */
+function resolveColor(cssVar){
+  // resolve a css variable like 'var(--route-1)' to its computed hex so it survives print reliably
+  const m = cssVar.match(/--([a-z0-9-]+)/);
+  if(!m) return cssVar;
+  return getComputedStyle(document.documentElement).getPropertyValue('--'+m[1]).trim() || cssVar;
+}
+function buildPrintHTML(){
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}年${today.getMonth()+1}月${today.getDate()}日 作成`;
+  let pages = '';
+  WEEKDAYS.forEach((d, di)=>{
+    const plan = computeDayPlan(d.key);
+    const totalUsers = state.users.filter(u=>state.attendance[d.key][u.id]).length;
+    const totalKm = plan.groups.reduce((s,g)=>s+g.length,0);
+
+    let warn = '';
+    if(plan.noStaff){
+      warn += `<div class="print-warn">⚠ この曜日に勤務可能な従業員が登録されていません。</div>`;
+    }
+    if(plan.unassigned && plan.unassigned.length){
+      warn += `<div class="print-warn">⚠ 定員超過のため未割当：${plan.unassigned.map(u=>u.name).join('、')}（${plan.unassigned.length}名）</div>`;
+    }
+
+    let vehicles = '';
+    if(plan.groups.length===0 && !plan.noStaff){
+      vehicles = `<div class="print-empty">この曜日は出席予定の利用者がいません。</div>`;
+    } else {
+      plan.groups.forEach(g=>{
+        const color = resolveColor(ROUTE_COLORS[g.colorIdx]);
+        const rows = g.order.map((u,i)=>{
+          const legDist = i===0 ? dist(DEPOT,u) : dist(g.order[i-1],u);
+          return `<tr>
+            <td>${i+1}</td>
+            <td>${u.name}</td>
+            <td>${u.wheelchair?'車椅子':''}</td>
+            <td>+${legDist.toFixed(1)} km</td>
+            <td></td>
+          </tr>`;
+        }).join('');
+        vehicles += `
+          <div class="print-vehicle-title"><span class="print-dot" style="background:${color}"></span>${g.staff.name}（乗車 ${g.order.length}/${g.staff.capacity}名・往路概算 ${g.length.toFixed(1)}km）</div>
+          <table class="print-table">
+            <thead><tr><th style="width:26px;">順</th><th>利用者名</th><th style="width:60px;">配慮</th><th style="width:70px;">区間距離</th><th style="width:70px;">送迎確認</th></tr></thead>
+            <tbody>${rows || `<tr><td colspan="5" style="color:#999;">該当なし</td></tr>`}</tbody>
+          </table>
+        `;
+      });
+    }
+
+    pages += `
+      <div class="print-page">
+        <div class="print-head">
+          <h1>${state.depot.name} 送迎週間予定表</h1>
+          <div class="pmeta">${state.depot.address? `${state.depot.address}<br>`:''}${state.weekLabel? `対象週：${state.weekLabel}<br>`:''}${todayStr}</div>
+        </div>
+        <div class="print-daytitle"><span class="dnum">${d.label}曜日</span><span class="dsub">迎え便（送り便は同ルートを逆順で運行）</span></div>
+        <div class="print-summary">
+          <span>出席予定：${totalUsers}名</span>
+          <span>稼働車両：${plan.groups.length}台</span>
+          <span>片道概算距離：${totalKm.toFixed(1)}km</span>
+        </div>
+        ${warn}
+        ${vehicles}
+        <div class="print-foot">みちしるべ 送迎ルート管理システムより出力（位置情報は${state.depot.name}を中心とした直線距離による概算です）</div>
+      </div>
+    `;
+  });
+  return pages;
+}
+function printWeeklySchedule(){
+  document.getElementById('print-area').innerHTML = buildPrintHTML();
+  setTimeout(()=>{ window.print(); }, 50);
+}
+function renderCalendarDay(d){
+  const plan = computeDayPlan(d.key);
+  const totalUsers = state.users.filter(u=>state.attendance[d.key][u.id]).length;
+  const hasWarn = plan.noStaff || (plan.unassigned && plan.unassigned.length>0);
+  const active = ui.day===d.key;
+
+  let body;
+  if(totalUsers===0){
+    body = `<div class="cal-empty">出席予定なし</div>`;
+  } else if(plan.noStaff){
+    body = `<div class="cal-empty cal-empty-warn">従業員未設定</div>`;
+  } else {
+    body = plan.groups.map(g=>{
+      const color = ROUTE_COLORS[g.colorIdx];
+      const names = g.order.map((u,i)=>`<div class="cal-stop">${i+1}. ${u.name}${u.wheelchair?' 🦽':''}</div>`).join('');
+      return `
+        <div class="cal-vehicle">
+          <div class="cal-vehicle-head">
+            <span class="line-dot" style="background:${color}"></span>
+            <span class="cal-vname">${g.staff.name}</span>
+            <span class="cal-cap">${g.order.length}/${g.staff.capacity}</span>
+          </div>
+          <div class="cal-names">${names || '<div class="cal-stop" style="color:var(--ink-faint);">担当なし</div>'}</div>
+        </div>
+      `;
+    }).join('');
+    if(plan.unassigned && plan.unassigned.length){
+      body += `<div class="cal-unassigned">未割当 ${plan.unassigned.length}名</div>`;
+    }
+  }
+
+  return `
+    <div class="cal-day ${active?'active':''}" onclick="setDay('${d.key}')">
+      <div class="cal-day-head">
+        <span class="cal-day-label">${d.label}</span>
+        <span class="cal-day-count">${totalUsers}名</span>
+        ${hasWarn?'<span class="cal-warn-dot" title="要確認"></span>':''}
+      </div>
+      <div class="cal-day-body">${body}</div>
+    </div>
+  `;
+}
+function renderPlanTab(){
+  const calendarCells = WEEKDAYS.map(d=>renderCalendarDay(d)).join('');
+
+  const plan = computeDayPlan(ui.day);
+  const totalUsers = state.users.filter(u=>state.attendance[ui.day][u.id]).length;
+  const totalKm = plan.groups.reduce((s,g)=>s+g.length,0);
+
+  const attendList = state.users.map(u=>{
+    const on = !!state.attendance[ui.day][u.id];
+    return `
+      <label class="attend-item">
+        <input type="checkbox" ${on?'checked':''} onchange="toggleAttendance('${ui.day}','${u.id}')">
+        <span class="attend-dot" style="background:${on?'var(--success)':'var(--ink-faint)'}"></span>
+        <span class="attend-name">${u.name}${u.wheelchair?' 🦽':''}</span>
+      </label>
+    `;
+  }).join('');
+
+  let notices = '';
+  if(plan.noStaff){
+    notices += `<div class="notice notice-warn">⚠️ ${dayLabel(ui.day)}曜日に勤務可能な従業員が登録されていません。従業員管理で勤務曜日を設定してください。</div>`;
+  }
+  if(plan.unassigned && plan.unassigned.length){
+    notices += `<div class="notice notice-warn">⚠️ 車両の定員が不足しているため、<b>${plan.unassigned.map(u=>u.name).join('、')}</b> さん（計${plan.unassigned.length}名）が割り当てられていません。従業員を追加するか、定員を見直してください。</div>`;
+  }
+  if(!notices){
+    notices = `<div class="notice notice-info">✅ ${dayLabel(ui.day)}曜日は全ての利用者に送迎ルートが割り当てられています。出席状況を変更すると、ルートは即座に再計算されます。</div>`;
+  }
+
+  const vehicles = plan.groups.map(g=>{
+    const color = ROUTE_COLORS[g.colorIdx];
+    const stops = g.order.map((u,i)=>{
+      const legDist = i===0? dist(DEPOT,u) : dist(g.order[i-1],u);
+      return `<div class="stop-row"><div class="stop-num" style="background:${color}">${i+1}</div><div class="snm">${u.name}${u.wheelchair?' 🦽':''}</div><div class="sdist">+${legDist.toFixed(1)}km</div></div>`;
+    }).join('');
+    return `
+      <div class="vehicle-card">
+        <div class="vehicle-head">
+          <span class="line-dot" style="background:${color}"></span>
+          <b>${g.staff.name}</b>
+          <span class="meta">乗車 ${g.order.length}/${g.staff.capacity}名 ・ 往路概算 ${g.length.toFixed(1)}km</span>
+        </div>
+        <div class="stop-list">${stops || '<div style="color:var(--ink-faint); font-size:13px; padding:6px 0;">この曜日の担当利用者はいません</div>'}</div>
+      </div>
+    `;
+  }).join('') || (plan.noStaff ? '' : `<div class="empty"><div class="ic">📭</div>この曜日に出席予定の利用者がいません。</div>`);
+
+  const mapOverlay = plan.groups.map(g=>({order:g.order, color: ROUTE_COLORS[g.colorIdx]}));
+
+  return `
+    <div class="page-head">
+      <div><h2>週間計画とルート</h2><p>カレンダーの曜日をクリックすると、その日の出席状況とルートを編集できます。</p></div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn btn-accent" onclick="resetWeek()">⟳ 今週の計画をワンクリック作成</button>
+        <button class="btn btn-primary" onclick="printWeeklySchedule()">🖨 週間予定表をPDF出力</button>
+      </div>
+    </div>
+
+    <div class="weeklabel-row">
+      <label for="week-label-input">対象週（任意・印刷時に表示されます）</label>
+      <input type="text" id="week-label-input" value="${state.weekLabel||''}" placeholder="例）2026年8月18日(月)〜8月23日(土)" onchange="updateWeekLabel(this.value)">
+    </div>
+
+    <div class="week-calendar">${calendarCells}</div>
+
+    <div class="day-detail-divider"><span>${dayLabel(ui.day)}曜日の詳細</span></div>
+
+    <div class="summary-strip">
+      <div class="stat"><div class="num">${totalUsers}</div><div class="lbl">${dayLabel(ui.day)}曜 出席予定</div></div>
+      <div class="stat"><div class="num">${plan.groups.length}</div><div class="lbl">稼働車両数</div></div>
+      <div class="stat"><div class="num">${totalKm.toFixed(1)}</div><div class="lbl">片道概算距離 (km)</div></div>
+      <div class="stat"><div class="num">${plan.unassigned.length}</div><div class="lbl">未割当の利用者</div></div>
+    </div>
+
+    ${notices}
+
+    <div class="plan-grid">
+      <div>
+        <div class="card card-pad">
+          <h4 style="font-size:14px; margin-bottom:10px;">${dayLabel(ui.day)}曜日の出席状況</h4>
+          ${attendList}
+        </div>
+      </div>
+      <div>
+        <div class="card card-pad" style="margin-bottom:16px;">
+          <h4 style="font-size:14px; margin-bottom:10px;">ルートマップ（迎え）</h4>
+          ${renderMiniMap(state.users, null, mapOverlay.length? mapOverlay : null)}
+        </div>
+        <h4 style="font-size:14px; margin:0 0 10px 2px;">車両別ルート詳細（迎え／送りは逆順で運行）</h4>
+        ${vehicles}
+      </div>
+    </div>
+  `;
+}
+
+/* ============ INIT ============ */
+loadState();
+</script>
+</body>
+</html>
